@@ -5,13 +5,25 @@
 //Function call for printing the help menu
 void PrintInfo();
 
-//Funciton for loading the encryption key
+//Function that will take a pointer to the string containing the input key, sanitize the
+//key and return a pointer to a dynamically allocated 
 char* LoadKey(char* inputKey);
 
 int main(int argc, char* argv[])
 {
     //Declare and initialize local variables
     int i;
+    int charsFromUpper = 'a' - 'A';
+    int currentKeyIndex = 0;
+    int totalInputChars = 0;
+    int totalInputLines = 0;
+    int totalInputUpper = 0;
+    int totalInputLower = 0;
+    int totalInputNumbers = 0;
+    int totalInputSpaces = 0;
+    int totalInputOther = 0;
+    int totalOutputLines = 0;
+    int outputCharCount = 0;
     char* inputFileName;
     char* outputFileName;
     char* cipherKey;
@@ -22,23 +34,10 @@ int main(int argc, char* argv[])
     FILE* inFile;
     FILE* outFile;
     
-    for (i=0; i<argc; i++)
-    {
-        if (i == 0)
-        {
-            printf("Command: ");
-        }
-        else
-        {
-            printf("Parameter %i: ", i);
-        }
-        printf("%s\n", argv[i]);
-    }
-    
     if (argc > 5)
     {
         //Too many parameters were passed to the program
-        printf("ERROR: AN INCORRECT NUMBER OF PARAMETERS WERE SPECIFIED\n");
+        printf("ERROR: AN INCORRECT NUMBER OF PARAMETERS WERE SPECIFIED\n\n");
         PrintInfo();
         exit(1);
     }
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
     //No parameters were passed to the program, only the program name (which is always the first parameter)
     else
     {
-        printf("ERROR: YOU MUST ENTER AN INPUT FILE\n");
+        printf("ERROR: YOU MUST ENTER AN INPUT FILE (USE /? FOR HELP)\n");
         exit(1);
     }
     
@@ -96,15 +95,38 @@ int main(int argc, char* argv[])
         outputFileName = defaultOutput;
     }
 
-    cipherKey = LoadKey(argv[3]);
+    if (argc > 3)
+    {
+        //Function call to determine the cipher key to be used
+        cipherKey = LoadKey(argv[3]);
+    }
+    //We do not have a third parameter, so we should pass a NULL to the LoadKey function
+    else
+    {
+        cipherKey = LoadKey(NULL);
+    }
 
     if (argc > 4 && (!strcmp(argv[4], "d") || !strcmp(argv[4], "D") || !strcmp(argv[4], "DECRYPT") || !strcmp(argv[4], "decrypt") || !strcmp(argv[4], "Decrypt")))
     {
         mode = decrypt;
     }
+    //We do not have a fourth parameter, or the parameter passed was not for decryption
     else
     {
         mode = encrypt;   
+    }
+        
+    for (i=0; i<argc; i++)
+    {
+        if (i == 0)
+        {
+            printf("Command: ");
+        }
+        else
+        {
+            printf("Parameter %i: ", i);
+        }
+        printf("%s\n", argv[i]);
     }
         
     printf("\nThe following parameters will be used:\n");
@@ -113,17 +135,104 @@ int main(int argc, char* argv[])
     printf("CIPHER KEY:\t%s\n", cipherKey);
     printf("MODE:\t\t%s\n", mode);
 
-    fclose(inFile);
-    fclose(outFile);
+    //This is the character to be used for input file processing
+    char temp = fgetc(inFile);
     
-    free(inFile);
-    free(outFile);
-    free(inputFileName);
-    free(outputFileName);
+    while(temp != EOF)
+    {        
+        if ((('a' <= temp) && ('z' >= temp)) || (('A' <= temp) && ('Z' >= temp)))
+        {
+            if (('a' <= temp) && ('z' >= temp))
+            {
+                temp = temp - charsFromUpper;
+                totalInputLower++;                 
+            }
+            else
+            {
+                totalInputUpper++;
+            }
+            
+            if (mode == encrypt)
+            {
+                temp = (((temp - 'A') + (cipherKey[currentKeyIndex] - 'A')) % 26) + 'A';
+                currentKeyIndex = (currentKeyIndex + 1)%strlen(cipherKey);
+            }
+            else if (mode == decrypt)
+            {
+                temp = ((26 + ((temp - 'A') - (cipherKey[currentKeyIndex] - 'A'))) % 26) + 'A';
+                currentKeyIndex = (currentKeyIndex + 1)%strlen(cipherKey);
+            }
+            
+            if (outputFileName == defaultOutput)
+            {
+                 printf("%c", temp);
+            }
+            else
+            {
+                fprintf(outFile, "%c", temp);
+            }
+            
+            outputCharCount++;
+            //We want to output characters in groups of 5 characters
+            if (outputCharCount == 5)
+            {
+                if (outputFileName == defaultOutput)
+                {
+                    printf("\n");
+                }
+                else
+                {
+                    fprintf(outFile, "\n");
+                }
+                outputCharCount = 0;
+                totalOutputLines++;
+            }
+        }
+        else if (temp == '\n')
+        {
+            totalInputLines++;
+        }
+        else if (temp == ' ')
+        {
+            totalInputSpaces++;
+        }
+        else if (('0' <= temp) && ('9' >= temp))
+        {
+            totalInputNumbers++;
+        }
+        else
+        {
+            totalInputOther++;
+        }
+        
+        totalInputChars++;
+        temp = fgetc(inFile);
+    }
+    totalInputLines++;
+    totalOutputLines++;
+    
+    printf("\nInput File \"%s\" Statistics\n", inputFileName);
+    printf("Total Characters:\t\t%i\n", totalInputChars);
+    printf("Total Lines:\t\t\t%i\n", totalInputLines);
+    printf("Total Letters:\t\t\t%i\n", totalInputUpper + totalInputLower);
+    printf("Total Uppercase Letters:\t%i\n", totalInputUpper);
+    printf("Total Lowercase Letters:\t%i\n", totalInputLower);    
+    printf("Total Numbers:\t\t\t%i\n", totalInputNumbers);    
+    printf("Total Whitespace Characters:\t%i\n", totalInputSpaces);
+    printf("Total Other Characters:\t\t%i\n", totalInputOther);
+    
+    printf("\nOuput File \"%s\" Statistics\n", outputFileName);
+    printf("Total Characters:\t\t%i\n", totalInputUpper + totalInputLower);
+    printf("Total Lines:\t\t\t%i\n", totalOutputLines);
+    printf("Total Letters:\t\t\t%i\n", totalInputUpper + totalInputLower);
+    printf("Total Uppercase Letters:\t%i\n", totalInputUpper + totalInputLower);
+    printf("Total Lowercase Letters:\t%i\n", 0);    
+    printf("Total Numbers:\t\t\t%i\n", 0);    
+    printf("Total Whitespace Characters:\t%i\n", 0);
+    printf("Total Other Characters:\t\t%i\n", 0);
+    
     free(cipherKey);
-    free(mode);
 
-    system("pause");
 	return 0;
 }
 
@@ -198,6 +307,5 @@ char* LoadKey(char* inputKey)
      }
      finalKey[charCount] = '\0';
      
-     free(tempKey);
      return finalKey;
 }
