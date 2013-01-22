@@ -172,6 +172,7 @@ int main(int argc, char* argv[])
                 fprintf(outFile, "%c", temp);
             }
             
+            totalInputChars++;
             outputCharCount++;
             //We want to output characters in groups of 5 characters
             if (outputCharCount == 5)
@@ -194,6 +195,7 @@ int main(int argc, char* argv[])
         }
         else if (temp == ' ')
         {
+            totalInputChars++;             
             totalInputSpaces++;
         }
         else if (('0' <= temp) && ('9' >= temp))
@@ -202,10 +204,10 @@ int main(int argc, char* argv[])
         }
         else
         {
+            totalInputChars++;
             totalInputOther++;
         }
         
-        totalInputChars++;
         temp = fgetc(inFile);
     }
     totalInputLines++;
