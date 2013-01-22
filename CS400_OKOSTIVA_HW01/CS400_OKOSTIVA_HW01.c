@@ -93,6 +93,12 @@ int main(int argc, char* argv[])
     else
     {
         outputFileName = defaultOutput;
+        outFile = stdout;
+        if (!outFile)
+        {
+            printf("ERROR: COULD NOT SET THE OUTPUT FILE TO THE CONSOLE\n");
+            exit(1);
+        }
     }
 
     if (argc > 3)
@@ -120,11 +126,11 @@ int main(int argc, char* argv[])
     {
         if (i == 0)
         {
-            printf("Command: ");
+            printf("Command:\t");
         }
         else
         {
-            printf("Parameter %i: ", i);
+            printf("Parameter %i:\t", i);
         }
         printf("%s\n", argv[i]);
     }
@@ -134,6 +140,8 @@ int main(int argc, char* argv[])
     printf("OUTPUT FILE:\t%s\n", outputFileName);
     printf("CIPHER KEY:\t%s\n", cipherKey);
     printf("MODE:\t\t%s\n", mode);
+
+    printf("\nRESULTS:\n");
 
     //This is the character to be used for input file processing
     char temp = fgetc(inFile);
@@ -163,28 +171,14 @@ int main(int argc, char* argv[])
                 currentKeyIndex = (currentKeyIndex + 1)%strlen(cipherKey);
             }
             
-            if (outputFileName == defaultOutput)
-            {
-                 printf("%c", temp);
-            }
-            else
-            {
-                fprintf(outFile, "%c", temp);
-            }
+            fprintf(outFile, "%c", temp);
             
             totalInputChars++;
             outputCharCount++;
             //We want to output characters in groups of 5 characters
             if (outputCharCount == 5)
             {
-                if (outputFileName == defaultOutput)
-                {
-                    printf("\n");
-                }
-                else
-                {
-                    fprintf(outFile, "\n");
-                }
+                fprintf(outFile, "\n");
                 outputCharCount = 0;
                 totalOutputLines++;
             }
@@ -212,6 +206,15 @@ int main(int argc, char* argv[])
     }
     totalInputLines++;
     totalOutputLines++;
+    
+    if (outputFileName != defaultOutput)
+    {
+        printf("Written to \"%s\"\n\n", outputFileName);
+    }
+    else 
+    {
+        printf("\n");
+    }
     
     printf("\nInput File \"%s\" Statistics\n", inputFileName);
     printf("Total Characters:\t\t%i\n", totalInputChars);
