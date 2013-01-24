@@ -21,5 +21,6 @@ int main(void)
        
     malloc(strlen(yytext)+1);
     strcopy(temp, yytext);
+    //DO A NULL POINTER CHECK AFTER THIS TOO
     temp = srtdup(yytext);
 }
