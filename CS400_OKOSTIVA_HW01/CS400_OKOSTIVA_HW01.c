@@ -33,6 +33,25 @@ int main(int argc, char* argv[])
     char* decrypt = "DECRYPT";
     FILE* inFile;
     FILE* outFile;
+       
+    // We expect the following parameters
+    // argv[1] = INPUT FILE
+    // argv[2] = OUTPUT FILE
+    // argv[3] = CIPHER KEY
+    // argv[4] = MODE
+    for (i=0; i<argc; i++)
+    {
+        if (i == 0)
+        {
+            printf("Command:\t");
+        }
+        else
+        {
+            printf("Parameter %i:\t", i);
+        }
+        printf("%s\n", argv[i]);
+    }
+    printf("\n"); 
     
     if (argc > 5)
     {
@@ -41,12 +60,6 @@ int main(int argc, char* argv[])
         PrintInfo();
         exit(1);
     }
-    
-    // We expect the following parameters
-    // argv[1] = INPUT FILE
-    // argv[2] = OUTPUT FILE
-    // argv[3] = CIPHER KEY
-    // argv[4] = MODE
     
     //We have at least the input file name
     if (argc > 1)
@@ -112,30 +125,21 @@ int main(int argc, char* argv[])
         cipherKey = LoadKey(NULL);
     }
 
-    if (argc > 4 && (!strcmp(argv[4], "d") || !strcmp(argv[4], "D") || !strcmp(argv[4], "DECRYPT") || !strcmp(argv[4], "decrypt") || !strcmp(argv[4], "Decrypt")))
+    //Default the mode to encryption and if we find that the mode should be decryption, 
+    //we can change it later
+    mode = encrypt;
+
+    if (argc > 4)
     {
-        mode = decrypt;
-    }
-    //We do not have a fourth parameter, or the parameter passed was not for decryption
-    else
-    {
-        mode = encrypt;   
-    }
-        
-    for (i=0; i<argc; i++)
-    {
-        if (i == 0)
+        char* temp = argv[4];
+        if (temp[0] == 'D' || temp[0] == 'd')
         {
-            printf("Command:\t");
+            mode = decrypt;
         }
-        else
-        {
-            printf("Parameter %i:\t", i);
-        }
-        printf("%s\n", argv[i]);
     }
-        
-    printf("\nThe following parameters will be used:\n");
+                
+    //Print the parameters to the console
+    printf("The following parameters will be used:\n");
     printf("INPUT FILE:\t%s\n", inputFileName);
     printf("OUTPUT FILE:\t%s\n", outputFileName);
     printf("CIPHER KEY:\t%s\n", cipherKey);
@@ -146,6 +150,8 @@ int main(int argc, char* argv[])
     //This is the character to be used for input file processing
     char temp = fgetc(inFile);
     
+    //Read in the input file character by character and add to the appropriate counts and 
+    //perform encryption/decryption accordingly and output the results
     while(temp != EOF)
     {        
         if ((('a' <= temp) && ('z' >= temp)) || (('A' <= temp) && ('Z' >= temp)))
@@ -159,12 +165,13 @@ int main(int argc, char* argv[])
             {
                 totalInputUpper++;
             }
-            
+            //Perform encryption
             if (mode == encrypt)
             {
                 temp = (((temp - 'A') + (cipherKey[currentKeyIndex] - 'A')) % 26) + 'A';
                 currentKeyIndex = (currentKeyIndex + 1)%strlen(cipherKey);
             }
+            //Perform decryption
             else if (mode == decrypt)
             {
                 temp = ((26 + ((temp - 'A') - (cipherKey[currentKeyIndex] - 'A'))) % 26) + 'A';
@@ -209,13 +216,14 @@ int main(int argc, char* argv[])
     
     if (outputFileName != defaultOutput)
     {
-        printf("Written to \"%s\"\n\n", outputFileName);
+        printf("Written to \"%s\"\n", outputFileName);
     }
     else 
     {
         printf("\n");
     }
     
+    //Print input file statistics
     printf("\nInput File \"%s\" Statistics\n", inputFileName);
     printf("Total Characters:\t\t%i\n", totalInputChars);
     printf("Total Lines:\t\t\t%i\n", totalInputLines);
@@ -225,7 +233,7 @@ int main(int argc, char* argv[])
     printf("Total Numbers:\t\t\t%i\n", totalInputNumbers);    
     printf("Total Whitespace Characters:\t%i\n", totalInputSpaces);
     printf("Total Other Characters:\t\t%i\n", totalInputOther);
-    
+    //Print output file statistics
     printf("\nOuput File \"%s\" Statistics\n", outputFileName);
     printf("Total Characters:\t\t%i\n", totalInputUpper + totalInputLower);
     printf("Total Lines:\t\t\t%i\n", totalOutputLines);
@@ -236,6 +244,9 @@ int main(int argc, char* argv[])
     printf("Total Whitespace Characters:\t%i\n", 0);
     printf("Total Other Characters:\t\t%i\n", 0);
     
+    //Close files and free allocated memory
+    fclose(inFile);
+    fclose(outFile);
     free(cipherKey);
 
 	return 0;

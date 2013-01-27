@@ -1,1 +1,1 @@
-CryptoIsShortForCryptography
+In CS400, we have to write programs in C.
