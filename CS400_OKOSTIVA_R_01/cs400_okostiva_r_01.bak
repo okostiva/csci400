@@ -1,0 +1,12 @@
+(define (unitTest)
+  (and 
+   (containsAnywhere 'a '(a))
+   (containsAnywhere 'a '(b a))
+   (not (containsAnywhere 'a '(c d)))
+   (containsAnywhere 'a '((a) b))
+   (containsAnywhere 'b '((c d e) (g b e)))
+   (containsAnywhere 'b '((c d e) (g (b) e)))
+   (not (containsAnywhere 'x '((c d e) (g (b) e))))
+   (containsAnywhere 'f '((c d e) (g (b) e) f))
+   (not (containsAnywhere 'h '((c d e) (g (b) e) f)))
+   ))
