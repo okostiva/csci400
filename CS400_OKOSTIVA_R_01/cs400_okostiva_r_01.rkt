@@ -23,9 +23,10 @@
 
 (define (removeAll elementToRemove inList)
   (cond ((null? inList) '())
-        ((list? inList) (append (list(removeAll elementToRemove (first inList)))
-                                (removeAll elementToRemove (rest inList))))
-        ((not (eq? elementToRemove inList)) inList)))
+        ((list? (first inList)) (append (list (removeAll elementToRemove (first inList)))
+                                        (removeAll elementToRemove (rest inList))))
+        ((eq? elementToRemove (first inList)) (removeAll elementToRemove (rest inList)))
+        (else (append (list (first inList)) (removeAll elementToRemove (rest inList))))))
 
 (define (unitTest2)
   (and 
@@ -39,3 +40,39 @@
 
 (display "Results from unitTest2: ")
 (unitTest2)
+
+(define (feet-to-meters feet)
+  (/ feet 3.28084))
+
+(define (meters-to-feet meters)
+  (* meters 3.28084))
+
+(define (celsius-to-fahrenheit celsius)
+  (+ (* (/ 9.0 5.0) celsius) 32))
+
+(define (fahrenheit-to-celsius fahrenheit)
+  (* (- fahrenheit 32) (/ 5.0 9.0)))
+
+(define (kilograms-to-pounds kilograms)
+  (* kilograms 2.20462))
+
+(define (pounds-to-kilograms pounds)
+  (/ pounds 2.20462))
+
+(define (dollars-to-pesos dollars)
+  (* dollars 12.62))
+
+(define (pesos-to-dollars pesos)
+  (/ pesos 12.62))
+  
+
+(define (calculator)
+  (display "Enter the first unit: ")
+  (let ([unit1 (read)])
+    (display "Enter the second unit: ")
+    (let* ([unit2 (read)]
+          [function (string->symbol (string-append (symbol->string unit1)
+                                                   (string-append "-to-" (symbol->string unit2))))])
+      (display "Enter the value to convert: ")
+      (let ([value (read)])
+        ((eval function) value)))))
