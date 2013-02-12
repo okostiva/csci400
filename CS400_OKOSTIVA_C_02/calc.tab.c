@@ -14,45 +14,45 @@ char *tokenValue(int token)
 	switch (token)
 	{
 		case END:
-			return "END";
+			return "<END>";
 		case ID:
-			return "ID";
+			return "<ID>";
 		case INT:
-			return "INT";
+			return "<INT>";
 		case FLT:
-			return "FLT";
+			return "<FLT>";
 		case OPAREN:
-			return "OPAREN";
+			return "<OPAREN>";
 		case CPAREN:
-			return "CPAREN";
+			return "<CPAREN>";
 		case ASSIGN:
-			return "ASSIGN";
+			return "<ASSIGN>";
 		case EXP:
-			return "EXP";
+			return "<EXP>";
 		case MUL:
-			return "MUL";
+			return "<MUL>";
 		case DIV:
-			return "DIV";
+			return "<DIV>";
 		case ADD:
-			return "ADD";
+			return "<ADD>";
 		case SUB:
-			return "SUB";
+			return "<SUB>";
 		case SEMI:
-			return "SEMI";
+			return "<SEMI>";
 		case BAD:
-			return "BAD";
+			return "<BAD>";
 		case NEWLINE:
-			return "NEWLINE";
+			return "<NEWLINE>";
 		case EOLCMT:
-			return "EOLCMT";
+			return "<EOLCMT>";
 		case BLKCMT:
-			return "BLKCMT";
+			return "<BLKCMT>";
 	}
 }
 
 int ExportToken(FILE *yyout, int token, char *yytext)
 {
-    fprintf(yyout, "<%s> %s\n", tokenValue(token), ((yytext)? yytext:""));
+    fprintf(yyout, "%-10s %s\n", tokenValue(token), ((yytext)? yytext:""));
     if (yytext)
        free(yytext);
     yytext = NULL;

@@ -75,7 +75,7 @@ int lexForwardSlash(int *lineCount)
 		//Get the first 20 characters, or a new line character for a line comment
 		while (currentChar = getNextChar())
 		{
-			if (currentChar == '\n')
+			if ((currentChar == '\n') || (currentChar == EOF))
 				break;
 
 			if (currentIndex < MAXINDEX)
@@ -105,7 +105,16 @@ int lexForwardSlash(int *lineCount)
 				(*lineCount)++;
 
 			if ((currentChar == '*') && (nextChar == '/'))
+			{
+				token = BLKCMT;
 				break;
+			}
+			else if (currentChar == EOF)
+			{
+				buffer[bufferIndex++] = currentChar;
+				token = BAD;
+				break;
+			}
 
 			if (currentIndex < MAXINDEX)
 			{
@@ -116,7 +125,6 @@ int lexForwardSlash(int *lineCount)
 			}
 		}
 
-		token = BLKCMT;
 		replaceBadChars();
 		newLexeme();
 	}
@@ -180,7 +188,7 @@ int getNextNonNumeric()
 
 //The first character of a floating point exponenet has been encountered, determine
 //if there is a valid exponent
-int lexExponent(int callingToken)
+int lexExponent()
 {
 	int token;
 	int tempIndex = currentIndex;
@@ -207,15 +215,9 @@ int lexExponent(int callingToken)
 			//There are no numbers in the exponent, so it is invalid
 			else
 			{
-				//Remove the exponent character and the sign character and place them in the buffer
-				//to be tokenized later
-				buffer[bufferIndex++] = currentLexeme[currentIndex-1];
-				buffer[bufferIndex++] = currentLexeme[currentIndex];
 				buffer[bufferIndex++] = nextChar;
-				currentLexeme[currentIndex--] = 0;
-				currentLexeme[currentIndex--] = 0;
 
-				token = callingToken;
+				token = BAD;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%s", currentLexeme);
 				newLexeme();
@@ -225,13 +227,9 @@ int lexExponent(int callingToken)
 		//sign of the exponent
 		else
 		{
-			//We need to remove the E and tokenize it separetely and then store the
-			//next input character for tokenizing
-			buffer[bufferIndex++] = currentLexeme[currentIndex];
 			buffer[bufferIndex++] = nextChar;
-			currentLexeme[currentIndex--] = 0;
 
-			token = callingToken;
+			token = BAD;
 			yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 			sprintf(yytext, "%s", currentLexeme);
 			newLexeme();
@@ -280,7 +278,6 @@ int lexFloating()
 		token = FLT;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
-		printf("Found FLT:\t%s\n", yytext);
 		newLexeme();
 	}
 
@@ -313,11 +310,31 @@ int lexNumeric()
 		token = INT;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
-		printf("Found INT:\t%s\n", yytext);
 		newLexeme();
 	}
 
 	return token;
+}
+
+//Get all of the bad characters up until a valid character that might start the next token
+void lexBad()
+{
+	int currentChar = getNextChar();
+
+	while (!isdigit(currentChar) && (currentChar != 'R') && (currentChar != '.') &&
+			(currentChar != '(') && (currentChar != ')') && (currentChar != '=') &&
+			(currentChar != '^') && (currentChar != '*') && (currentChar != '/') &&
+			(currentChar != '+') && (currentChar != '-') && (currentChar != ';') &&
+			(currentChar != ' ') && (currentChar != '\n') && (currentChar != EOF))
+	{
+		if (currentIndex < MAXINDEX)
+			currentLexeme[currentIndex++] = currentChar;
+
+		currentChar = getNextChar();
+	}
+
+	if (currentChar != ' ')
+		buffer[bufferIndex++] = currentChar;
 }
 
 int yylex(void)
@@ -329,7 +346,10 @@ int yylex(void)
 	int yychar;
 	int *lineCountReference = &lineCount;
 
-	yychar = getNextChar(); //Function call to get the next character (may be from file or buffer)
+	yychar = getNextChar(); //Function call to get the next character (may be from file or buffer
+	//Recoginize and skip over spaces
+	if (yychar == ' ')
+		yychar = getNextChar();
 	currentLexeme[currentIndex++] = yychar;
 
 	//If this character is a digit, determine if this is an INT or FLT
@@ -353,56 +373,48 @@ int yylex(void)
 				token = OPAREN;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found OPAREN %s\n", yytext);
 				newLexeme();
 				break;
 			case ')':
 				token = CPAREN;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found CPAREN %s\n", yytext);
 				newLexeme();
 				break;
 			case '=':
 				token = ASSIGN;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found ASSIGN %s\n", yytext);
 				newLexeme();
 				break;
 			case '^':
 				token = EXP;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found EXP %s\n", yytext);
 				newLexeme();
 				break;
 			case '*':
 				token = MUL;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found MUL %s\n", yytext);
 				newLexeme();
 				break;
 			case '+':
 				token = ADD;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found ADD %s\n", yytext);
 				newLexeme();
 				break;
 			case '-':
 				token = SUB;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found SUB %s\n", yytext);
 				newLexeme();
 				break;
 			case ';':
 				token = SEMI;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%c", yychar);
-				printf("Found SEMI %s\n", yytext);
 				newLexeme();
 				break;
 			case '.':
@@ -412,24 +424,26 @@ int yylex(void)
 				token = NEWLINE;
 				yytext = (char *) malloc(11*sizeof(char));
 				sprintf(yytext, "%i", lineCount++);
-				printf("Found NEWLINE %s\n", yytext);
 				newLexeme();
 				break;
 			case EOF:
 				token = END;
 				yytext = (char *) malloc(11*sizeof(char));
 				sprintf(yytext, "%i", tokens);
-				printf("Found END %s\n", yytext);
 				newLexeme();
 				break;
 			default:
 				token = BAD;
+				lexBad();
 				replaceBadChars();
 				newLexeme();
 				break;
 		}
 	}
 
+	//Do not count the debugging tokens
+	if ((token != BAD) && (token != EOLCMT) && (token != BLKCMT) && (token != NEWLINE) && (token != END))
+		tokens++;
 	return token;
 }
 
