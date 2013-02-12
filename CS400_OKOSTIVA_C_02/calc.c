@@ -9,7 +9,17 @@
 
 //Global variables to track the current lexeme and character index of the lexeme
 int currentIndex = 0;
+int bufferIndex = 0;
 char currentLexeme[MAXINDEX] = { 0 };
+char buffer[MAXINDEX] = { 0 };
+
+char getNextChar()
+{
+	if (bufferIndex == 0)
+		return fgetc(yyin);
+	else
+		return buffer[--bufferIndex];
+}
 
 //Reinitialize the current lexeme and reset the character index
 void newLexeme(void)
@@ -30,8 +40,9 @@ void replaceBadChars(void)
 	int i;
 	
 	//Initialize the yytext variable based on the size of the current lexeme
-	//Multiply the count by 3 in case every character is bad and must be represeneted by #nn
-	yytext = (char *) malloc((currentIndex*3)*sizeof(char));
+	//Multiply the count by 4 in case every character is bad and must be represeneted by #nn
+	//so that there is still enough space for the null terminator
+	yytext = (char *) malloc((currentIndex*4)*sizeof(char));
 
 	//Initialize the yytext variable with the first character of the current lexeme
 	if (isgraph(currentLexeme[0])&&('#' != currentLexeme[0]))
@@ -54,7 +65,7 @@ void replaceBadChars(void)
 //	2) If the next character is an asterisk, a block comment has been found
 int lexForwardSlash(int *lineCount)
 {
-	int currentChar = fgetc(yyin);
+	int currentChar = getNextChar();
 	int token;
 
 	//Line comment found
@@ -62,7 +73,7 @@ int lexForwardSlash(int *lineCount)
 	{
 		newLexeme();
 		//Get the first 20 characters, or a new line character for a line comment
-		while (currentChar = fgetc(yyin))
+		while (currentChar = getNextChar())
 		{
 			if (currentChar == '\n')
 				break;
@@ -76,19 +87,19 @@ int lexForwardSlash(int *lineCount)
 			}
 		}
 
+		buffer[bufferIndex++] = currentChar;
 		token = EOLCMT;
 		replaceBadChars();
 		newLexeme();
-		currentLexeme[currentIndex++] = currentChar;
 	}
 	//Block comment found
 	else if (currentChar == '*')
 	{
-		char nextChar = fgetc(yyin);
+		char nextChar = getNextChar();
 				
 		newLexeme();
 		//Get the first 20 characters, or the characters */ to end the block comment
-		while ((currentChar = nextChar) && (nextChar = fgetc(yyin)))
+		while ((currentChar = nextChar) && (nextChar = getNextChar()))
 		{
 			if (nextChar == '\n')
 				(*lineCount)++;
@@ -112,11 +123,11 @@ int lexForwardSlash(int *lineCount)
 	//The subsequent character did not create a comment, so it must have been a division token
 	else
 	{
+		buffer[bufferIndex++] = currentChar;
 		token = DIV;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
 		newLexeme();
-		currentLexeme[currentIndex++] = currentChar;
 	}
 
 	return token;
@@ -126,7 +137,7 @@ int lexForwardSlash(int *lineCount)
 int lexID()
 {
 	int token;
-	int nextChar = fgetc(yyin);
+	int nextChar = getNextChar();
 
 	//If the next character is a digit then an ID has been found
 	if (isdigit(nextChar))
@@ -140,11 +151,11 @@ int lexID()
 	//Otherwise the first character of the ID was a bad character
 	else 
 	{
+		buffer[bufferIndex++] = nextChar;
 		token = BAD;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%c", currentLexeme);
 		newLexeme();
-		currentLexeme[currentIndex++] = nextChar;
 	}
 
 	return token;
@@ -154,14 +165,14 @@ int lexID()
 //lexeme and returns the next non-numeric character
 int getNextNonNumeric()
 {
-	int nextChar = fgetc(yyin);
+	int nextChar = getNextChar();
 
 	//As long as the next character from the input file is a numeric, add it to the
 	//current lexeme and get the next character
 	while (isdigit(nextChar))
 	{
 		currentLexeme[currentIndex++] = nextChar;
-		nextChar = fgetc(yyin);
+		nextChar = getNextChar();
 	}
 
 	return nextChar;
@@ -175,63 +186,65 @@ int lexExponent(int callingToken)
 	int tempIndex = currentIndex;
 	int nextChar = getNextNonNumeric();
 
-	//If the index has not changed, that means that this could be the start of a valid exponent
+	//If the index has not changed, the exponent may have a sign, or may start with a decimal point
 	if (currentIndex == tempIndex)
 	{
-		//Check to make sure that the next character starts the beginning of a signed FLT
+		//Check to make sure that the next character starts the beginning of a valid FLT
 		if ((nextChar == '-') || (nextChar == '+'))
 		{
 			currentLexeme[currentIndex++] = nextChar;
-			tempIndex = currentIndex;
 			nextChar = getNextNonNumeric();
 
-			//Check to see if the next non-numeric character is the decimal in a floating
-			//point number
-			if (nextChar == '.')
+			//There are numbers in the exponent, so it is valid and the token can be exported
+			if (currentIndex > (tempIndex + 1))
 			{
-				//If so, get the next non-numeric character
-				currentLexeme[currentIndex++] == nextChar;
-				nextChar = getNextNonNumeric();
-			}
-
-			//There are numbers in the exponenet, so it is valid and the token can be exported
-			if (currentIndex > tempIndex)
-			{
+				buffer[bufferIndex++] = nextChar;
 				token = FLT;
 				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 				sprintf(yytext, "%s", currentLexeme);
 				newLexeme();
-				currentLexeme[currentIndex++] = nextChar;
 			}
 			//There are no numbers in the exponent, so it is invalid
 			else
 			{
-				token = BAD;
-				currentLexeme[currentIndex++] = nextChar;
+				//Remove the exponent character and the sign character and place them in the buffer
+				//to be tokenized later
+				buffer[bufferIndex++] = currentLexeme[currentIndex-1];
+				buffer[bufferIndex++] = currentLexeme[currentIndex];
+				buffer[bufferIndex++] = nextChar;
+				currentLexeme[currentIndex--] = 0;
+				currentLexeme[currentIndex--] = 0;
+
+				token = callingToken;
+				yytext = (char *) malloc((currentIndex+1)*sizeof(char));
+				sprintf(yytext, "%s", currentLexeme);
+				newLexeme();
 			}
 		}
 		//The exponent did not begin with a valid + or - character to indicate the
 		//sign of the exponent
 		else
 		{
-			token = BAD;
-			currentLexeme[currentIndex++] = nextChar;
+			//We need to remove the E and tokenize it separetely and then store the
+			//next input character for tokenizing
+			buffer[bufferIndex++] = currentLexeme[currentIndex];
+			buffer[bufferIndex++] = nextChar;
+			currentLexeme[currentIndex--] = 0;
+
+			token = callingToken;
+			yytext = (char *) malloc((currentIndex+1)*sizeof(char));
+			sprintf(yytext, "%s", currentLexeme);
+			newLexeme();
 		}
 	}
-	//Otherwise use the initial token and tokenize the bad data later
+	//The E was followed by one or more numbers making a valid integer exponent
 	else
 	{
-		//Remove the bad character from the current lexeme
-		char badChar = currentLexeme[currentIndex];
-		currentLexeme[currentIndex--] = 0;
-
-		token = callingToken;
+		buffer[bufferIndex++] = nextChar;
+		token = FLT;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
 		newLexeme();
-		//Add the bad character and the next character to the new lexeme to be tokenized
-		currentLexeme[currentIndex++] = badChar;
-		currentLexeme[currentIndex++] = nextChar;
 	}
 
 	return token;
@@ -244,56 +257,63 @@ int lexFloating()
 	int token;
 	int nextChar = getNextNonNumeric();
 
-	if (str)
+	//If the current lexeme does not contain at least 2 charcters then the
+	//lexeme cannot be a floating point value as it must contain a decimal
+	//and at least one digit
+	if (currentIndex < 2)
 	{
+		buffer[bufferIndex++] = nextChar;
+		token = BAD;
+		replaceBadChars();
+		newLexeme();
 	}
+	//This is a possible exponent
 	else if (toupper(nextChar) == 'E')
 	{
 		currentLexeme[currentIndex++] = nextChar;
 		token = lexExponent(FLT);
 	}
+	//Otherwise a valid floating point number has been found
 	else
 	{
+		buffer[bufferIndex++] = nextChar;
 		token = FLT;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
 		printf("Found FLT:\t%s\n", yytext);
 		newLexeme();
-		currentLexeme[currentIndex++] = nextChar;
 	}
 
 	return token;
 }
 
+//It is possible that either an INT or a FLT has been found so figure out which one
 int lexNumeric()
 {
 	int token;
 	int nextChar = getNextNonNumeric();
 
+	//A decimal point has been found, so this could be a floating point number
 	if (nextChar == '.')
 	{
 		currentLexeme[currentIndex++] = nextChar;
 		token = lexFloating();
 	}
+	//The first character of an exponent has been found, so this could be a floating 
+	//point number
 	else if (toupper(nextChar) == 'E')
 	{
 		currentLexeme[currentIndex++] = nextChar;
 		token = lexExponent(INT);
 	}
+	//Otherwise a valid INT has been found
 	else
 	{
+		buffer[bufferIndex++] = nextChar;
 		token = INT;
 		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		sprintf(yytext, "%s", currentLexeme);
 		printf("Found INT:\t%s\n", yytext);
-		newLexeme();
-		currentLexeme[currentIndex++] = nextChar;
-	}
-
-	if (token == BAD)
-	{
-		printf("Found BAD... Uh oh...\t%s\n", currentLexeme);
-		yytext = (char *) malloc((currentIndex+1)*sizeof(char));
 		newLexeme();
 	}
 
@@ -309,17 +329,10 @@ int yylex(void)
 	int yychar;
 	int *lineCountReference = &lineCount;
 
-	//There is no current lexeme, so start a new one
-	if (currentIndex == 0)
-	{
-		yychar = fgetc(yyin); // File assumed to be open and ready
-		currentLexeme[currentIndex++] = yychar;
-	}
-	else
-	{
-		yychar = currentLexeme[currentIndex-1];
-	}
+	yychar = getNextChar(); //Function call to get the next character (may be from file or buffer)
+	currentLexeme[currentIndex++] = yychar;
 
+	//If this character is a digit, determine if this is an INT or FLT
 	if (isdigit(yychar))
 	{
 		token = lexNumeric();

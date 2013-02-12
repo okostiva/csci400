@@ -9,9 +9,50 @@
 FILE *yyin = NULL;
 char *yytext = NULL;
 
+char *tokenValue(int token)
+{
+	switch (token)
+	{
+		case END:
+			return "END";
+		case ID:
+			return "ID";
+		case INT:
+			return "INT";
+		case FLT:
+			return "FLT";
+		case OPAREN:
+			return "OPAREN";
+		case CPAREN:
+			return "CPAREN";
+		case ASSIGN:
+			return "ASSIGN";
+		case EXP:
+			return "EXP";
+		case MUL:
+			return "MUL";
+		case DIV:
+			return "DIV";
+		case ADD:
+			return "ADD";
+		case SUB:
+			return "SUB";
+		case SEMI:
+			return "SEMI";
+		case BAD:
+			return "BAD";
+		case NEWLINE:
+			return "NEWLINE";
+		case EOLCMT:
+			return "EOLCMT";
+		case BLKCMT:
+			return "BLKCMT";
+	}
+}
+
 int ExportToken(FILE *yyout, int token, char *yytext)
 {
-    fprintf(yyout, "<%03i> %s\n", token, ((yytext)? yytext:""));
+    fprintf(yyout, "<%s> %s\n", tokenValue(token), ((yytext)? yytext:""));
     if (yytext)
        free(yytext);
     yytext = NULL;
