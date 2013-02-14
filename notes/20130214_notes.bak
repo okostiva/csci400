@@ -1,0 +1,11 @@
+(define (cl x)
+  [let* ((z 5) (y 20) (fn (lambda (x) (* x y z))))
+    (let ((y 10))
+      (fn y))])
+
+(define (cl_4 x y z)
+  (let * [(y 7) (fn (lambda (x) (+ x y z)))]
+    (let [(z 1)]
+      (set! y 5)
+      (set! z 3)
+      (fn z))))
