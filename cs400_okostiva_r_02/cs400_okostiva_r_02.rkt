@@ -35,11 +35,56 @@
   (display " WINS!")
   (newline))
 
+;Function to check whether the game is over (if there are no sticks remaining the game is over)
+(define (gameOver board)
+  (if (null? (rest board))
+      (eq? (length (first board)) 0)
+      (and (eq? (length (first board)) 0) (gameOver (rest board)))))
+
 ;Function to get the number of rows in the given board
 (define (getBoardRows board) (length board))
 
 ;Function to get the number of remaining sticks in a given row of a given board
 (define (getRemainingSticks board row) (length (list-ref board (- row 1))))
+
+;Function to get a valid random row
+;If the initial random number corresponds to a row with no sticks, increment the row until a row with sticks is found
+(define (getRandomRow board)
+  (define (checkRow index)
+    (if (> (getRemainingSticks board (+ index 1)) 0)
+        index
+        (checkRow (modulo (+ 1 index) (getBoardRows board)))))
+  (checkRow (random (getBoardRows board))))
+
+;Function that will return a list containing the number of elements in each row of a given board
+(define (getRowSizeList board)
+    (if (null? (rest board))
+        (list (length (first board)))
+        (append (list (length (first board))) (getRowSizeList (rest board)))))
+
+;Function that accepts the a list containing the number of sticks remaining in each row in the board and the current 
+;row index that should be used to determine if a good move is possible
+(define (makeBestMove rowSizeList rowIndex board)
+  ((lambda (xorResult)
+     (cond ((<= (bitwise-xor (list-ref rowSizeList rowIndex) xorResult) (list-ref rowSizeList rowIndex))
+           ((lambda (row numSticks)
+              (display "Which row do you choose:.. ")
+              (display row)
+              (newline)
+              (display "How many sticks:.......... ")
+              (display numSticks)
+              (newline)
+              (removeSticks board row numSticks))
+            (+ rowIndex 1) (- (list-ref rowSizeList rowIndex) (bitwise-xor (list-ref rowSizeList rowIndex) xorResult))))
+          (else (makeBestMove rowSizeList (+ 1 rowIndex) board))))
+   (apply bitwise-xor rowSizeList)))
+
+;Function to remove a given number of sticks from the given row of the given board
+;Returns a new board
+(define (removeSticks board row numSticks)
+  (if (eq? row 1)
+      (append (list (list-tail (first board) numSticks)) (rest board))
+      (append (list (first board)) (removeSticks (rest board) (- row 1) numSticks))))
 
 ;Function to validate that the user selected a valid row
 (define (validateRow board row)
@@ -54,13 +99,6 @@
         ((< numSticks 1) #f)
         ((> numSticks (getRemainingSticks board row)) #f)
         (else #t)))
-
-;Function to remove a given number of sticks from the given row of the given board
-;Returns a new board
-(define (removeSticks board row numSticks)
-  (if (eq? row 1)
-      (append (list (list-tail (first board) numSticks)) (rest board))
-      (append (list (first board)) (removeSticks (rest board) (- row 1) numSticks))))
 
 ;Function to handle the user move
 (define (humanTurn board)
@@ -78,20 +116,30 @@
 
 ;Function to handle the random player's move
 (define (randomTurn board)
-  (display "Hello random"))
+  ((lambda (row)
+     (display "Which row do you choose:.. ")
+     (display row)
+     (newline)
+     ((lambda (numSticks)
+        (display "How many sticks:.......... ")
+        (display numSticks)
+        (newline)
+        (removeSticks board row numSticks))
+      (+ (random (getRemainingSticks board row)) 1)))
+   (+ (getRandomRow board) 1)))
 
 ;Function to handle the smart player's move
 (define (smartTurn board)
-  (display "Hello smart"))
-
-;Function to check whether the game is over (if there are no sticks remaining the game is over)
-(define (gameOver board)
-  (if (null? (rest board))
-      #t
-      (and (eq? (length (first board)) 0) (gameOver (rest board)))))
+  ((lambda (rowSizeList)
+     ;If the parity is already even, make a random move because there is no move that guarantees a win
+     (if (eq? (apply bitwise-xor rowSizeList) 0)
+         (randomTurn board)
+         (makeBestMove rowSizeList 0 board)))
+   (getRowSizeList board)))
 
 ;Function to control the game play
 ;Takes a board, list of players and the index of the current player's turn as parameters
+;Returns the number of the winning player
 (define (playNIM board players playerTurn)
   (display "--------------------------")
   (newline)
@@ -107,12 +155,21 @@
               (humanTurn board)))
             ((string=? (string-upcase (symbol->string (list-ref players playerTurn))) "SMART")
              (displayTurn playerTurn)
-             (playNIM (smartTurn board) players (modulo (+ 1 playerTurn) (length players))))
+             ((lambda (resultBoard)
+                (if (gameOver resultBoard)
+                    (displayWinner playerTurn)
+                    (playNIM resultBoard players (modulo (+ 1 playerTurn) (length players)))))
+              (smartTurn board)))
             ((string=? (string-upcase (symbol->string (list-ref players playerTurn))) "RANDOM")
              (displayTurn playerTurn)
-             (playNIM (randomTurn board) players (modulo (+ 1 playerTurn) (length players))))
+             ((lambda (resultBoard)
+                (if (gameOver resultBoard)
+                    (displayWinner playerTurn)
+                    (playNIM resultBoard players (modulo (+ 1 playerTurn) (length players)))))
+              (randomTurn board)))
             (else (display "PLEASE PROVIDE A VALID PLAYER LIST")))
-      (display "PLEASE PROVIDE A VALID BOARD")))
+      (display "PLEASE PROVIDE A VALID BOARD"))
+  (+ 1 playerTurn))
 
 ;Function to initialize the game play
 (define (NIM board players)
@@ -124,4 +181,5 @@
           (display "PLEASE PROVIDE A NON-EMPTY PLAYER LIST")
           (playNIM board players 0))))
 
-(NIM '[(X) (X X X) (X X X X X)] '(human human))
+;Start the game when the file is run
+(NIM '[(X) (X X X) (X X X X X)] '(smart human))
