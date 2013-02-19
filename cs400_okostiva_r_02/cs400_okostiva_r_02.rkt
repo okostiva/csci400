@@ -27,19 +27,25 @@
   (newline))
 
 ;Function to display the winner of the game
+;Returns the number of the winning player
 (define (displayWinner playerNum)
   (display "--------------------------")
   (newline)
   (display "PLAYER ")
   (display (+ 1 playerNum))
   (display " WINS!")
-  (newline))
+  (newline)
+  (+ 1 playerNum))
+
+;Function that will return a list containing the number of elements in each row of a given board
+(define (getRowSizeList board)
+    (if (null? (rest board))
+        (list (length (first board)))
+        (append (list (length (first board))) (getRowSizeList (rest board)))))
 
 ;Function to check whether the game is over (if there are no sticks remaining the game is over)
 (define (gameOver board)
-  (if (null? (rest board))
-      (eq? (length (first board)) 0)
-      (and (eq? (length (first board)) 0) (gameOver (rest board)))))
+  (eq? 0 (apply + (getRowSizeList board))))
 
 ;Function to get the number of rows in the given board
 (define (getBoardRows board) (length board))
@@ -55,12 +61,6 @@
         index
         (checkRow (modulo (+ 1 index) (getBoardRows board)))))
   (checkRow (random (getBoardRows board))))
-
-;Function that will return a list containing the number of elements in each row of a given board
-(define (getRowSizeList board)
-    (if (null? (rest board))
-        (list (length (first board)))
-        (append (list (length (first board))) (getRowSizeList (rest board)))))
 
 ;Function that accepts the a list containing the number of sticks remaining in each row in the board and the current 
 ;row index that should be used to determine if a good move is possible
@@ -139,7 +139,6 @@
 
 ;Function to control the game play
 ;Takes a board, list of players and the index of the current player's turn as parameters
-;Returns the number of the winning player
 (define (playNIM board players playerTurn)
   (display "--------------------------")
   (newline)
@@ -168,18 +167,17 @@
                     (playNIM resultBoard players (modulo (+ 1 playerTurn) (length players)))))
               (randomTurn board)))
             (else (display "PLEASE PROVIDE A VALID PLAYER LIST")))
-      (display "PLEASE PROVIDE A VALID BOARD"))
-  (+ 1 playerTurn))
+      (display "PLEASE PROVIDE A VALID BOARD")))
 
 ;Function to initialize the game play
 (define (NIM board players)
   (display "WELCOME TO NIM!")
   (newline)
-  (if (empty? board)
+  (if (or (empty? board) (eq? 0 (apply + (getRowSizeList board))))
       (display "PLEASE PROVIDE A NON-EMPTY BOARD")
       (if (empty? players)
           (display "PLEASE PROVIDE A NON-EMPTY PLAYER LIST")
           (playNIM board players 0))))
 
 ;Start the game when the file is run
-(NIM '[(X) (X X X) (X X X X X)] '(smart human))
+(NIM '[(X X X) (X) (X X) (X X X X X) (X X X)] '(human smart))
