@@ -264,12 +264,12 @@
 
 ;**************************************************************************
 ;**************************************************************************
-(define (cl_5 x y z) 
-  (let* [(y1 7) (fn (lambda (x2) (+ x2 y1 z)))]
-    (let [(z3 1)]
-      (set! y1 5)
-      (set! z3 3)
-      (fn z3)
+(define (cl_5 x1 y1 z1) 
+  (let* [(y2 7) (fn (lambda (x3) (+ x3 y2 z1)))]
+    (let [(z4 1)]
+      (set! y2 5)
+      (set! z4 3)
+      (fn z4)
       )
     )
   )
@@ -380,19 +380,13 @@
 ; necessariy the same 'a' and 'b' in the 'fnlst'. They are just example
 ; identifiers. You can use them (or not).
 
-(define a 3)
-(define b 5)
-(define c 1)
-(define d 1)
-(define x 3)
-(define y 2)
+(define a0 3)
+(define b0 5)
+(define c0 3)
+(define d0 2)
 
-(define (jack x2)
-  (set! a (+ a b x))
-  (+ a b c x2))
-(define (jill x2) 
-  (set! b (- a b c))
-  (+ a b c x2))
+(define (jack x2) (set! a0 (+ a0 b0 c0)) (+ a0 b0 c0 x2))
+(define (jill y2) (set! b0 (- a0 b0 c0)) (+ a0 b0 c0 y2))
 
 (define (jj1 x1 y1)
   (display "\nPART (a)\n")
@@ -401,6 +395,8 @@
   (display "jill: ") (display (jill y1)) (display "\n")
   (display "jack: ") (display (jack y1)) (display "\n")
   (display "jill: ") (display (jill y1)) (display "\n")
+  (set! a0 3)
+  (set! b0 5)
   (display "jack-jill-jill-jack\n")
   (display "jack: ") (display (jack 2)) (display "\n")
   (display "jill: ") (display (jill 2)) (display "\n")
@@ -408,23 +404,23 @@
   (display "jack: ") (display (jack 2)) (display "\n")
 )
 
-(jj1 x y)
+(jj1 c0 d0)
          
 ; PART (b)
 ; Put your computations here. Be sure to make them comments so that the
 ; file you submit will run.
 
-; CALL   a    b    c    d    returns
-; jack
-; jill
-; jack
-; jill
+; CALL   a0    b0    c0    d0    returns
+; jack   11    5     3     2     21
+; jill   11    3     3     2     19
+; jack   17    3     3     2     25
+; jill   17    11    3     2     33
 
-; CALL   a    b    c    d    returns
-; jack
-; jill
-; jill
-; jack
+; CALL   a0    b0    c0    d0    returns
+; jack   11    5     3     2     21
+; jill   11    3     3     2     19
+; jill   11    5     3     2     21
+; jack   19    5     3     2     29
 
 ;**************************************************************************
 ;**************************************************************************
@@ -479,33 +475,57 @@
 ; necessariy the same 'a' and 'b' in the 'fnlst'. They are just example
 ; identifiers. You can use them (or not).
 
-(define a 1)
-(define b 1)
-(define (jack w) 17)
-(define (jill x) 13)
-(define (adam y) 42)
-(define (abby z) 39)
+(define aa0 3)
+(define aj0 3)
+(define ba0 5)
+(define bj0 5)
+(define c0 7)
+(define d0 2)
 
+(define (jack w2) (set! aj0 (+ aj0 bj0 c0)) (+ aj0 bj0 c0 w2))
+(define (jill x2) (set! bj0 (- aj0 bj0 c0)) (+ aj0 bj0 c0 x2))
+(define (adam y2) (set! aa0 (+ aa0 ba0 c0)) (+ aa0 ba0 c0 y2))
+(define (abby z2) (set! ba0 (- aa0 ba0 c0)) (+ aa0 ba0 c0 z2))
+
+(define (jjaa1 x1 y1)
+  (display "\nPART (a)\n")
+  (display "adam: ") (display (adam y1)) (display "\n")
+  (display "abby: ") (display (abby y1)) (display "\n")
+  (display "adam: ") (display (adam y1)) (display "\n")
+  (display "abby: ") (display (abby y1)) (display "\n")
+  (display "jack: ") (display (jack y1)) (display "\n")
+  (display "jill: ") (display (jill y1)) (display "\n")
+  (display "adam: ") (display (adam y1)) (display "\n")
+  (display "abby: ") (display (abby y1)) (display "\n")
+  (display "jack: ") (display (jack y1)) (display "\n")
+  (display "jill: ") (display (jill y1)) (display "\n")
+  (display "adam: ") (display (adam y1)) (display "\n")
+  (display "abby: ") (display (abby y1)) (display "\n")
+  (display "jack: ") (display (jack y1)) (display "\n")
+  (display "jill: ") (display (jill y1)) (display "\n")
+)
+
+(jjaa1 c0 d0)
          
 ; PART (b)
 ; Put your computations here. Be sure to make them comments so that the
 ; file you submit will run.
 
-; CALL   a    b    c    d    returns
-; adam
-; abby
-; adam
-; abby
-; jack
-; jill
-; adam
-; abby
-; jack
-; jill
-; adam
-; abby
-; jack
-; jill
+; CALL   aa0    aj0    ba0    bj0    c0    d0    returns
+; adam   15     3      5      5      7     2     29
+; abby   15     3      3      5      7     2     27
+; adam   25     3      3      5      7     2     37
+; abby   25     3      15     5      7     2     49
+; jack   25     15     15     5      7     2     29
+; jill   25     15     15     3      7     2     27
+; adam   47     15     15     3      7     2     71
+; abby   47     15     25     3      7     2     81
+; jack   47     25     25     3      7     2     37
+; jill   47     25     25     15     7     2     49
+; adam   79     25     25     15     7     2     113
+; abby   79     25     47     15     7     2     135
+; jack   79     47     47     15     7     2     71
+; jill   79     47     47     25     7     2     81
 
 ;**************************************************************************
 ;**************************************************************************
