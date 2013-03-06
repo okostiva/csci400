@@ -1,3 +1,9 @@
+;Orion Kostival
+;CSCI 400
+;3/7/2013
+;Racket HW #3 Part2
+
+;List of articles defined the problem description
 (define articles '(
      ((Test-Driven Learning: Intrinsic Integration of Testing into the CS/SE Curriculum)
       ((David Jansen)(Hossein Saiedian))
@@ -22,15 +28,57 @@
       ("Design Patterns" "Game of Life" "CS1" "Laboratory"))
    ))
 
-(define (getTitle paper) 
-  (if (list? paper)
-      (first paper)
+;Accessor for the title of the article
+(define (getTitle article) 
+  (if (list? article)
+      (first article)
       '()))
 
-(define (getAuthors paper)
-  (if (list? paper)
-      (first (rest paper))))
+;Accessor for the author of the article
+(define (getAuthors article)
+  (if (list? article)
+      (first (rest article))))
        
-(define (getKeywords paper)
-  (if (list? paper)
-      (first (rest (rest paper)))))
+;Accessor for the keywords of the article
+(define (getKeywords article)
+  (if (list? article)
+      (first (rest (rest article)))))
+
+;Function call to match the definition in the project description
+;
+;This function will call the selectTitles function with the results
+;from the call to the doSearch function
+(define (keywordSearch keyword articleList)
+  (selectTitles articleList (doSearch keyword articles)))
+
+;Function call that will return all of the titles of the articles
+;that contained the given keyword based on a list of search results
+(define (selectTitles articleList searchResults)
+  (if (null? searchResults) 
+      '()
+      (if (first searchResults) 
+          (append (list (getTitle (first articleList)))
+                  (selectTitles (rest articleList) (rest searchResults)))
+          (selectTitles (rest articleList) (rest searchResults)))))
+
+;Function call that utilized map and currying in order to call the 
+;createFunction method for each article in the list of provided articles
+(define (doSearch keyword articleList)
+  (map (createFunction keyword) articleList))
+
+;Fuction call that utilized currying in order to properly build up the
+;call to containsKeyword which requires two arguments (but map can only
+;use a single argument)
+(define (createFunction keyword)
+  (lambda (article)
+    (containsKeyword keyword (getKeywords article))))
+
+;Function that will return true if the provided keyword is found in the 
+;provided list of keywords
+(define (containsKeyword keyword keywordList)
+  (if (null? keywordList)
+      #f
+      (if (string=? keyword (first keywordList))
+          #t
+          (containsKeyword keyword (rest keywordList)))))
+    
