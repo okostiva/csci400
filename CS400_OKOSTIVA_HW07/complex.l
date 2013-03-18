@@ -12,7 +12,7 @@ IMAG {REAL}?i
 ADD "+"
 SUB "-"
 %% 
-({ADD}|{SUB})?{REAL}({ADD}|{SUB}){IMAG} { printf ( "A complex number: %s (%s)\n", yytext, yytext); }
+{REAL}({ADD}|{SUB}){IMAG} { printf ( "A complex number: %s (%s)\n", yytext, yytext); }
 {IMAG} { printf ( "An imaginary number: %s (%s)\n", yytext, yytext); }
 {REAL} { printf ( "A real number: %s (%g)\n", yytext, atof( yytext ) ); }
 {DEC1} { printf ( "A real number: %s (%g)\n", yytext, atof( yytext ) ); }
