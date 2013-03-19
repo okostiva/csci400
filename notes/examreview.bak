@@ -1,0 +1,6 @@
+(define list1 `(1 6 8 3 10))
+
+(define (oddElements inList)
+  (cond ((null? inList) '())
+        ((null? (rest inList)) (list (first inList)))
+        (else (append (list (first inList)) (oddElements (cddr inList))))))
