@@ -30,20 +30,20 @@ close_brace: '}'
 	;
 	
 statements: statement statements
-	|	statement 
+	|	statement
 	;
 	
-statement:	NAME '=' expression ';' { printf("%s = %f\n", $1, $3); updateTotal($3);}
+statement:	NAME '=' expression ';' {  printf("%s = %f\n", $1, $3); updateTotal($3); }
 	|	expression ';'				{ printf("= %f\n", $1); updateTotal($1); }
 	;
 
-expression:	expression '+' term   { $$ = $1 + $3; }
-	|	expression '-' term       { $$ = $1 - $3; }
-	|	term                      { $$ = $1; }
+expression:	expression '+' term   { printf("REDUCE: <expression> -> <expression> + <term> (%f)\n", $3); $$ = $1 + $3; }
+	|	expression '-' term       { printf("REDUCE: <expression> -> <expression> - <term> (%f)\n", $3); $$ = $1 - $3; }
+	|	term                      { printf("REDUCE: <expression> -> <term>(%f)\n", $1); $$ = $1; }
 	;
 
-term:	term '*' factor	{ $$ = $1 * $3; }
-	|	term '/' factor	{ $$ = $1 / $3; }
+term:	term '*' factor	{ printf("REDUCE: <term> -> <term> (%f) * <factor> (%f)\n", $1, $3); $$ = $1 * $3; }
+	|	term '/' factor	{ printf("REDUCE: <term> -> <term> (%f) / <factor> (%f)\n", $1, $3); $$ = $1 / $3; }
 	|	factor			{ $$ = $1; }
 	;
 
