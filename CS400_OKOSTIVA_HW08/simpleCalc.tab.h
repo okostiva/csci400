@@ -39,7 +39,7 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     NAME = 258,
+     REGISTER = 258,
      NUMBER = 259,
      FNUMBER = 260,
      NEWLINE = 261
@@ -53,7 +53,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 6 "simpleCalc.y"
+#line 22 "simpleCalc.y"
 
      float fval;
 	 int ival;
