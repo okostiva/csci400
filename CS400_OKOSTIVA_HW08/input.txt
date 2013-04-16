@@ -1,0 +1,6 @@
+{
+register_4 = 3.4*5;
+R9 = 5 + 93/7;
+reg6 = 7 + 4.32;
+Rfkdklsfd_8 = Raaaa_4/Reg9+Rfjkdlsf6;
+}
