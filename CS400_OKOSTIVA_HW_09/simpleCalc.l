@@ -1,15 +1,13 @@
 %option noyywrap
 
 %{
-// William L. Bahn
-// Spring 2013
-// Slightly crippled SimpleCalc
 
 #include <stdio.h>
 #include <string.h>
 #include "simpleCalc.tab.h"
 
-int extract_reg(char *s);
+int extractreg(char *s);
+void setInputFile(char* filename);
 void token(int tkn);
 
 extern int verbose;
@@ -18,10 +16,15 @@ extern int verbose;
 
 %%
 
-[rR][_A-Za-z]*[0-4] { yylval.ival = extract_reg(yytext); token(I_REG) ; return I_REG; }
-[rR][_A-Za-z]*[5-9] { yylval.ival = extract_reg(yytext); token(F_REG); return F_REG; }
-[0-9]+	{ yylval.ival = atoi(yytext); token(I_NUM); return I_NUM; }
-[0-9]+\.[0-9]*	{ yylval.fval = atof(yytext); token(F_NUM); return F_NUM; }
+\/\*([^\*]|[\r\n]|(\*+([^\*\/]|[\r\n])))*\*+\/ 		{ token(BCMT); }	/* ignore block comments */
+\/\/.*\n?			{ token(LCMT); } 	/* ignore line comments */
+\?					{ yylval.sval = yytext; token(PCMD); return PCMD; }	/* This represents a print command */
+[eE]				{ yylval.sval = yytext; token(ENOT); return ENOT; }	/* This represents e notation in a floating point number */
+[rR][_A-Za-z]*[0-4] { yylval.ival = extractreg(yytext); token(IREG) ; return IREG; }
+[rR][_A-Za-z]*[5-9] { yylval.ival = extractreg(yytext); token(FREG); return FREG; }
+[0-9]+	{ yylval.ival = atoi(yytext); token(INUM); return INUM; }
+[0-9]*\.[0-9]+	{ yylval.fval = atof(yytext); token(FNUM); return FNUM; }
+[0-9]+\.[0-9]*	{ yylval.fval = atof(yytext); token(FNUM); return FNUM; }
 [ \t]	;		/* ignore white space */
 \n    	;		/* ignore white space */
 .	    {token(yytext[0]); return yytext[0];}
@@ -44,10 +47,14 @@ void token(int tkn)
 
 		switch(tkn)
 		{
-			case I_NUM: printf("TOKEN: %s (%i from %s)\n", "I_NUM", yylval.ival, yytext); break;
-			case F_NUM: printf("TOKEN: %s (%g from %s)\n", "F_NUM", yylval.fval, yytext); break;
-			case I_REG: printf("TOKEN: %s (%i from %s)\n", "I_REG", yylval.ival, yytext); break;
-			case F_REG: printf("TOKEN: %s (%i from %s)\n", "F_REG", yylval.ival, yytext); break;
+			case INUM: printf("TOKEN: %s (%i from %s)\n", "INUM", yylval.ival, yytext); break;
+			case FNUM: printf("TOKEN: %s (%g from %s)\n", "FNUM", yylval.fval, yytext); break;
+			case IREG: printf("TOKEN: %s (%i from %s)\n", "IREG", yylval.ival, yytext); break;
+			case FREG: printf("TOKEN: %s (%i from %s)\n", "FREG", yylval.ival, yytext); break;
+			case LCMT: printf("TOKEN: %s (line comment ignored)\n", "LCMT"); break;				// line comment
+			case BCMT: printf("TOKEN: %s (block comment ignored)\n", "BCMT"); break;			// block comment
+			case PCMD: printf("TOKEN: %s (%s from %s)\n", "PCMD", yylval.sval, yytext); break;	// Print Symbol		
+			case ENOT: printf("TOKEN: %s (%s from %s)\n", "ENOT", yylval.sval, yytext); break;	// E Notation Symbol
 			case 0    : printf("TOKEN: %s\n", "<<EOF>>"); break;
 			default   : printf("TOKEN: %c\n", tkn); break;
 		}
@@ -55,7 +62,7 @@ void token(int tkn)
 }
 
 // This function assumes that the string passed is a properly recognized token
-int extract_reg(char *s)
+int extractreg(char *s)
 {
 	int reg;
 	
@@ -65,14 +72,42 @@ int extract_reg(char *s)
 	return ((reg<5)? reg : reg - 5); // Adjust fp reg index
 }
 
+// attempt to set the input based on the file name provided
+void setInputFile(char* filename)
+{
+	yyin = fopen(filename, "rt");
+	if (!yyin)
+	{
+		printf("Failed to open input file <%s>\n", filename);
+		exit(1);
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	if (1 <= argc)
+	// parse the command line arguments looking for a file name and -v (verbose) flag
+	if (argc == 2)
 	{
-		yyin = fopen(argv[1], "rt");
-		if (!yyin)
+		if (strcmp(argv[1], "-v") == 0)
+			verbose = 1;
+		else 
+			setInputFile(argv[1]);
+	}
+	else if (argc == 3)
+	{
+		if (strcmp(argv[1], "-v") == 0)
 		{
-			printf("Failed to open input file <%s>\n", argv[1]);
+			verbose = 1;
+			setInputFile(argv[2]);
+		}
+		else if (strcmp(argv[2], "-v") == 0)
+		{
+			verbose = 1;
+			setInputFile(argv[1]);
+		}
+		else
+		{
+			printf("An invalid number of paramters were provided.\n");
 			exit(1);
 		}
 	}

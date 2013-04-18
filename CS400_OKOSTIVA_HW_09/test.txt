@@ -1,0 +1,15 @@
+{
+	//fjkdklsf	
+4;
+5; /* gljksdjk
+skdkfljslkdkafls
+88***********jfkldlks
+//
+fjlkds******/
+5  + 4; /*fjklsdfljkjs f*/
+?9.0+2.5; //fjklsdfjl
+
+R9 = -2-+13^-5*-7;
+?R9;
+?9E2.1;
+}
